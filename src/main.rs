@@ -8,7 +8,7 @@ fn main() {
     let private_key = RSAPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
     let public_key = RSAPublicKey::from(&private_key);
 
-    let _connect = init_lib::main();
+    let _connect = init_lib::init_connection();
 
     // Encrypt
     let data = b"Think_test";

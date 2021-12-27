@@ -1,24 +1,11 @@
-use sqlx::mysql::MySqlPool;
+use diesel::prelude::*;
+use dotenv::dotenv;
+use std::env;
 
-pub async fn main() -> Result<(), sqlx::Error> {
-    // Create a connection pool
-    //  for MySQL, use MySqlPoolOptions::new()
-    //  for SQLite, use SqlitePoolOptions::new()
-    //  etc.
-    // let pool = MySqlPoolOptions::new()
-    //     .max_connections(5)
-    //     .connect("jdbc:mysql://root@localhost:3306/users")
-    //     .await?;
-    let pool = MySqlPool::connect("mysql://root@localhost:3306/users").await?;
+pub fn init_connection() -> SqliteConnection {
+    dotenv().ok();
 
-    let name = "kekus".to_string();
-    // Make a simple query to return the given parameter (use a question mark `?` instead of `$1` for MySQL)
-    let _row = sqlx::query(r#"INSERT INTO creds (name) VALUES (?)"#)
-        .bind(name)
-        .execute(&pool)
-        .await?;
-
-    // assert_eq!(row.0, "kekus".to_string());
-
-    Ok(())
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    SqliteConnection::establish(&database_url)
+        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
