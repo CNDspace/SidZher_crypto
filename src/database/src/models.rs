@@ -1,4 +1,4 @@
-use super::schema::posts;
+use super::schema::data;
 
 #[derive(Queryable)]
 pub struct Creds {
@@ -8,7 +8,7 @@ pub struct Creds {
 }
 
 #[derive(Insertable)]
-#[table_name = "posts"]
+#[table_name = "data"]
 pub struct UpdateCreds<'a> {
     pub login: &'a str,
     pub password: &'a str,
