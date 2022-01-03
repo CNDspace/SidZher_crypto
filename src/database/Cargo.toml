@@ -8,3 +8,4 @@ edition = "2018"
 [dependencies]
 diesel = { version = "1.4.0", features = ["sqlite"] }
 dotenv = "0.10"
+init_lib = { path="../../src/init_lib" }
