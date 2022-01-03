@@ -1,3 +1,4 @@
+use database::*;
 use init_lib;
 use rand::rngs::OsRng;
 use rsa::{PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey};
@@ -9,6 +10,10 @@ fn main() {
     let public_key = RSAPublicKey::from(&private_key);
 
     let _connect = init_lib::init_connection();
+    let user: String = String::from("Not_kek");
+    let password: String = String::from("Kek_password");
+    // register_user(user, password);
+    check_user(&user, &password);
 
     // Encrypt
     let data = b"Think_test";
