@@ -1,20 +1,16 @@
+use self::models::*;
+use self::schema::data;
+use self::schema::data::dsl::*;
+use diesel::prelude::*;
 use init_lib::init_connection;
-#[macro_use]
-extern crate diesel;
-extern crate dotenv;
 
 pub mod models;
 pub mod schema;
-use self::models::Creds;
-use self::models::UpdateCreds;
-use crate::schema::data::dsl::data;
-use diesel::prelude::*;
-use dotenv::dotenv;
-use std::env;
+
+#[macro_use]
+extern crate diesel;
 
 pub fn check_user(login_kek: &String, password_kek: &String) -> bool {
-    use self::schema::data::dsl::*;
-
     let results = data
         .load::<Creds>(&init_connection())
         .expect("Failed to load table!");
@@ -27,8 +23,6 @@ pub fn check_user(login_kek: &String, password_kek: &String) -> bool {
 }
 
 pub fn register_user(login_kek: String, password_kek: String) -> usize {
-    use self::schema::data;
-
     let new_user = UpdateCreds {
         login: login_kek.as_str(),
         password: password_kek.as_str(),
