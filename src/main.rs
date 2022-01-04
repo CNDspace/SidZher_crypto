@@ -3,11 +3,6 @@ use database;
 use init_lib;
 
 fn main() {
-    // let mut rng = OsRng;
-    // let bits = 2048;
-    // let private_key = RSAPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
-    // let public_key = RSAPublicKey::from(&private_key);
-
     // let _connect = init_lib::init_db_connection();
     let user: String = String::from("Not_kek");
     let password: String = String::from("Kek_password");
