@@ -1,32 +1,28 @@
-use database::*;
-use init_lib::*;
-use rand::rngs::OsRng;
-use rsa::{PaddingScheme, PublicKey, RSAPrivateKey, RSAPublicKey};
+use crypto_module;
+use database;
+use init_lib;
 
 fn main() {
-    let mut rng = OsRng;
-    let bits = 2048;
-    let private_key = RSAPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
-    let public_key = RSAPublicKey::from(&private_key);
+    // let mut rng = OsRng;
+    // let bits = 2048;
+    // let private_key = RSAPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
+    // let public_key = RSAPublicKey::from(&private_key);
 
-    let _connect = init_db_connection();
+    // let _connect = init_lib::init_db_connection();
     let user: String = String::from("Not_kek");
     let password: String = String::from("Kek_password");
-    // register_user(user, password);
-    check_user(&user, &password);
+    // // register_user(user, password);
+    database::check_user(&user, &password);
+
+    // Init Crypto
+    let mut crypto_config = init_lib::crypto_module_gen();
 
     // Encrypt
     let data = b"Think_test";
-    let padding = PaddingScheme::new_pkcs1v15_encrypt();
-    let enc_data = public_key
-        .encrypt(&mut rng, padding, &data[..])
-        .expect("failed to encrypt");
+    let enc_data = crypto_module::encrypt_data(&mut crypto_config, data);
     println!("{}", String::from_utf8_lossy(&*enc_data));
 
     // Decrypt
-    let padding = PaddingScheme::new_pkcs1v15_encrypt();
-    let dec_data = private_key
-        .decrypt(padding, &enc_data)
-        .expect("failed to decrypt");
+    let dec_data = crypto_module::decrypt_data(&mut crypto_config, enc_data);
     println!("{}", String::from_utf8_lossy(&*dec_data));
 }

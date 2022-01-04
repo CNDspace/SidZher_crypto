@@ -2,21 +2,23 @@ use crate::ckeys::CKeys;
 use diesel::prelude::*;
 use dotenv::dotenv;
 use rand::rngs::OsRng;
-use rsa::{/*PaddingScheme, PublicKey, */ RSAPrivateKey, RSAPublicKey};
+use rsa::{RSAPrivateKey, RSAPublicKey};
 use std::env;
 
 pub mod ckeys {
     pub struct CKeys {
+        pub osrng: rand::rngs::OsRng,
         pub private_key: rsa::RSAPrivateKey,
         pub public_key: rsa::RSAPublicKey,
     }
     impl CKeys {
-        // A public constructor method
         pub fn new(
+            osrng_data: rand::rngs::OsRng,
             private_key_data: rsa::RSAPrivateKey,
             public_key_data: rsa::RSAPublicKey,
         ) -> CKeys {
             CKeys {
+                osrng: osrng_data,
                 private_key: private_key_data,
                 public_key: public_key_data,
             }
@@ -32,7 +34,7 @@ pub fn init_db_connection() -> SqliteConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-//TODO: NOT TESTED!!!
+//TODO: add args for generate new or update
 pub fn crypto_module_gen() -> CKeys {
     dotenv().ok();
 
@@ -43,5 +45,5 @@ pub fn crypto_module_gen() -> CKeys {
         .expect("Cannot parse type");
     let private_key_t = RSAPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
     let public_key_t = RSAPublicKey::from(&private_key_t);
-    return ckeys::CKeys::new(private_key_t, public_key_t);
+    return ckeys::CKeys::new(rng, private_key_t, public_key_t);
 }

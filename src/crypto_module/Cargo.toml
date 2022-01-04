@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 init_lib = { path="../../src/init_lib" }
+rsa = "0.4.0"

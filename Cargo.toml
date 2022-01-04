@@ -11,8 +11,6 @@ name = "kuzhersy_back"
 path = "src/main.rs"
 
 [dependencies]
-rsa = "0.4.0"
-rand = "0.8.4"
 serde_json = "1.0"
 database = { path="src/database"}
 init_lib = { path="src/init_lib"}
