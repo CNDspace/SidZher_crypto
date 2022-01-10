@@ -15,3 +15,4 @@ serde_json = "1.0"
 database = { path="src/database"}
 init_lib = { path="src/init_lib"}
 crypto_module = { path= "./src/crypto_module" }
+net_module = { path="./src/net_module"}
