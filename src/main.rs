@@ -1,10 +1,34 @@
 // use crypto_module;
 // use database;
 // use init_lib;
-use net_module;
+// use net_module;
+
+// use std::env;
+use std::io::prelude::*;
+use std::net::TcpListener;
+use std::net::TcpStream;
+
+fn handle_connection(mut stream: TcpStream) {
+    let mut buffer = [0; 1024];
+
+    stream.read(&mut buffer).unwrap();
+
+    let response = "HTTP/1.1 200 OK\r\n\r\n";
+
+    stream.write(response.as_bytes()).unwrap();
+    stream.flush().unwrap();
+}
 
 fn main() {
-    net_module::connect()
+    let listener = TcpListener::bind("127.0.0.1:5141");
+    if let Ok(listener_ok) = listener {
+        for stream in listener_ok.incoming() {
+            let stream = stream.unwrap();
+            handle_connection(stream);
+        }
+    } else {
+        println!("Error bind!")
+    }
 
     // // let _connect = init_lib::init_db_connection();
     // let user: String = String::from("Not_kek");

@@ -1,7 +1,9 @@
 use crate::ckeys::CKeys;
+extern crate redis;
 use diesel::prelude::*;
 use dotenv::dotenv;
 use rand::rngs::OsRng;
+use redis::{Client, RedisResult};
 use rsa::{RSAPrivateKey, RSAPublicKey};
 use std::env;
 
@@ -32,6 +34,10 @@ pub fn init_db_connection() -> SqliteConnection {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     SqliteConnection::establish(&database_url)
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+}
+
+pub fn init_redis_db_connection() -> RedisResult<Client> {
+    return redis::Client::open("rediss://127.0.0.1/");
 }
 
 //TODO: add args for generate new or update
