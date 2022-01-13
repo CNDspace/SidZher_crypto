@@ -37,7 +37,7 @@ pub fn init_db_connection() -> SqliteConnection {
 }
 
 pub fn init_redis_db_connection() -> RedisResult<Client> {
-    return redis::Client::open("rediss://127.0.0.1/");
+    return redis::Client::open("redis://127.0.0.1:6379/");
 }
 
 //TODO: add args for generate new or update
