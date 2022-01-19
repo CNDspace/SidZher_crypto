@@ -2,11 +2,9 @@
 // use database;
 // use init_lib;
 // use net_module;
-
 // use std::env;
 use std::io::prelude::*;
-use std::net::TcpListener;
-use std::net::TcpStream;
+use std::net::{TcpListener, TcpStream};
 
 fn handle_connection(mut stream: TcpStream) {
     let mut buffer = [0; 1024];
@@ -30,7 +28,7 @@ fn main() {
             handle_connection(stream);
         }
     } else {
-        println!("Error bind!")
+        println!("Error bind listener!")
     }
 
     // // let _connect = init_lib::init_db_connection();
