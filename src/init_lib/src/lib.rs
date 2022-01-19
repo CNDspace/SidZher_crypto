@@ -42,13 +42,8 @@ pub fn init_redis_db_connection() -> RedisResult<Client> {
 
 //TODO: add args for generate new or update
 pub fn crypto_module_gen() -> CKeys {
-    dotenv().ok();
-
     let mut rng = OsRng;
-    let bits = env::var("KEY_LEN")
-        .expect("KEY_LEN must be set")
-        .parse::<usize>()
-        .expect("Cannot parse type");
+    let bits = 2048;
     let private_key_t = RSAPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
     let public_key_t = RSAPublicKey::from(&private_key_t);
     return ckeys::CKeys::new(rng, private_key_t, public_key_t);

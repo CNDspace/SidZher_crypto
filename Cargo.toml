@@ -15,3 +15,4 @@ serde_json = "1.0.75"
 database = { path="src/database"}
 init_lib = { path="src/init_lib"}
 crypto_module = { path= "./src/crypto_module" }
+serde = { version = "1.0.104", features = ["derive"] }

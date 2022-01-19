@@ -3,20 +3,65 @@
 // use init_lib;
 // use net_module;
 // use std::env;
+use serde::{Deserialize, Serialize};
+use serde_json::Result;
 use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
 
-fn handle_connection(mut stream: TcpStream) {
-    let mut buffer = [0; 1024];
+#[derive(Serialize, Deserialize)]
+pub struct Transit {
+    step: i64,
+    req_type: String,
+    user: String,
+    data: String,
+}
 
-    stream.read(&mut buffer).unwrap();
+fn parse_data(req_data: &str) -> Result<String> {
+    // let mut request_json: Transit = serde_json::from_str(req_data);
 
-    let response = format!(
-        "HTTP/1.1 200 OK\r\n\r\nYou send\r\n {}",
-        String::from_utf8_lossy(&buffer)
-    );
+    return match serde_json::from_str(req_data) {
+        Ok(parsed) => {
+            let mut request_json: Transit = parsed;
+            request_json.user = "New user".to_string();
+            let response_json = serde_json::to_string_pretty(&request_json);
+            response_json
+        }
+        Err(e) => {
+            let error_struct_parse: Transit = Transit {
+                step: 0,
+                req_type: "".to_string(),
+                user: "".to_string(),
+                data: format!("Error: {}", e.to_string()),
+            };
+            let response_json = serde_json::to_string_pretty(&error_struct_parse);
+            response_json
+        }
+    };
+}
 
+fn send_data(mut stream: &TcpStream, request_message: String) {
+    let response = format!("{}", request_message);
     stream.write(response.as_bytes()).unwrap();
+}
+
+fn handle_connection(mut stream: TcpStream) {
+    let mut buffer = String::new();
+
+    stream.read_to_string(&mut buffer).unwrap();
+
+    let serealized_data = parse_data(buffer.as_str());
+
+    match serealized_data {
+        Ok(parsed) => {
+            let request_message = parsed.clone();
+            send_data(&stream, request_message)
+        }
+        Err(e) => {
+            let request_message = e.to_string().clone();
+            send_data(&stream, request_message)
+        }
+    }
+
     stream.flush().unwrap();
 }
 
