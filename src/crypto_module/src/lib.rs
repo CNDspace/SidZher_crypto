@@ -10,7 +10,7 @@ pub fn encrypt_data(crypt_info: &mut CKeys, data: &[u8]) -> Vec<u8> {
     return enc_data;
 }
 
-pub fn decrypt_data(crypt_info: &mut CKeys, enc_data: Vec<u8>) -> Vec<u8> {
+pub fn decrypt_and_compare_data(crypt_info: &mut CKeys, enc_data: Vec<u8>) -> Vec<u8> {
     let padding = PaddingScheme::new_pkcs1v15_encrypt();
     let dec_data = crypt_info
         .private_key

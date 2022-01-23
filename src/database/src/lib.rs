@@ -2,7 +2,7 @@ use self::models::*;
 use self::schema::data;
 use self::schema::data::dsl::*;
 use diesel::prelude::*;
-use init_lib::init_db_connection;
+use init_lib::{init_db_connection, init_redis_db_connection};
 use redis::{Commands, Connection as RedisConnection};
 
 pub mod models;
@@ -35,7 +35,8 @@ pub fn register_usersqlite(login_kek: String, password_kek: String) -> usize {
         .expect("Error add new user!")
 }
 
-pub fn check_user_redis(connection: &mut RedisConnection, username: String) -> String {
+pub fn check_user_redis(username: &String) -> String {
+    let mut connection = init_redis_db_connection().unwrap();
     let check_user_db: Option<String> = connection
         .get(username)
         .unwrap_or(Option::from("ERROR".to_string()));

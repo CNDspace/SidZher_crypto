@@ -7,6 +7,8 @@ use rsa::{RSAPrivateKey, RSAPublicKey};
 use std::env;
 
 pub mod ckeys {
+    use crate::crypto_module_gen;
+
     pub struct CKeys {
         pub osrng: rand::rngs::OsRng,
         pub private_key: rsa::RSAPrivateKey,
@@ -23,6 +25,9 @@ pub mod ckeys {
                 private_key: private_key_data,
                 public_key: public_key_data,
             }
+        }
+        pub fn flush() -> CKeys {
+            crypto_module_gen()
         }
     }
 }
