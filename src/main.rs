@@ -10,15 +10,13 @@ use std::net::{TcpListener, TcpStream};
 
 #[derive(Serialize, Deserialize)]
 pub struct Transit {
-    step: i64,
+    step: u8,
     req_type: String,
     user: String,
     data: String,
 }
 
 fn parse_data(req_data: &str) -> Result<String> {
-    // let mut request_json: Transit = serde_json::from_str(req_data);
-
     return match serde_json::from_str(req_data) {
         Ok(parsed) => {
             let mut request_json: Transit = parsed;
