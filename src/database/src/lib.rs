@@ -3,6 +3,7 @@ use self::schema::data;
 use self::schema::data::dsl::*;
 use diesel::prelude::*;
 use init_lib::init_db_connection;
+use redis::{Commands, Connection as RedisConnection};
 
 pub mod models;
 pub mod schema;
@@ -10,7 +11,7 @@ pub mod schema;
 #[macro_use]
 extern crate diesel;
 
-pub fn check_user(login_kek: &String, password_kek: &String) -> bool {
+pub fn check_user_sqlite(login_kek: &String, password_kek: &String) -> bool {
     let results = data
         .load::<Creds>(&init_db_connection())
         .expect("Failed to load table!");
@@ -22,7 +23,7 @@ pub fn check_user(login_kek: &String, password_kek: &String) -> bool {
     false
 }
 
-pub fn register_user(login_kek: String, password_kek: String) -> usize {
+pub fn register_usersqlite(login_kek: String, password_kek: String) -> usize {
     let new_user = UpdateCreds {
         login: login_kek.as_str(),
         password: password_kek.as_str(),
@@ -32,4 +33,24 @@ pub fn register_user(login_kek: String, password_kek: String) -> usize {
         .values(&new_user)
         .execute(&init_db_connection())
         .expect("Error add new user!")
+}
+
+pub fn check_user_redis(connection: &mut RedisConnection, username: String) -> String {
+    let check_user_db: Option<String> = connection
+        .get(username)
+        .unwrap_or(Option::from("ERROR".to_string()));
+    return if let Some(password_redis) = check_user_db {
+        password_redis
+    } else {
+        "ERROR".to_string()
+    };
+}
+
+pub fn register_user_redis(
+    connection: &mut RedisConnection,
+    username_redis: String,
+    password_redis: String,
+) -> redis::RedisResult<()> {
+    let _: () = connection.set(username_redis, password_redis)?;
+    Ok(())
 }

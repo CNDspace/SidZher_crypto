@@ -50,20 +50,15 @@ fn handle_connection(mut stream: TcpStream) {
     let serealized_data = parse_data(buffer.as_str());
 
     match serealized_data {
-        Ok(parsed) => {
-            let request_message = parsed.clone();
-            send_data(&stream, request_message)
-        }
-        Err(e) => {
-            let request_message = e.to_string().clone();
-            send_data(&stream, request_message)
-        }
+        Ok(parsed) => send_data(&stream, parsed),
+        Err(e) => send_data(&stream, e.to_string()),
     }
 
     stream.flush().unwrap();
 }
 
 fn main() {
+    let _connection = init_lib::init_redis_db_connection().unwrap();
     let listener = TcpListener::bind("127.0.0.1:5141");
     if let Ok(listener_ok) = listener {
         for stream in listener_ok.incoming() {
