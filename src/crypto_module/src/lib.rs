@@ -1,4 +1,7 @@
+extern crate bcrypt;
+use bcrypt::verify;
 use init_lib::ckeys::CKeys;
+use redis::{Commands, Connection as RedisConnection};
 use rsa::{PaddingScheme, PublicKey};
 
 pub fn encrypt_data(crypt_info: &mut CKeys, data: &[u8]) -> Vec<u8> {
@@ -10,11 +13,22 @@ pub fn encrypt_data(crypt_info: &mut CKeys, data: &[u8]) -> Vec<u8> {
     return enc_data;
 }
 
-pub fn decrypt_and_compare_data(crypt_info: &mut CKeys, enc_data: Vec<u8>) -> Vec<u8> {
+pub fn decrypt_and_compare_data(
+    crypt_info: &mut CKeys,
+    enc_data: Vec<u8>,
+    username: String,
+    db_connection: &mut RedisConnection,
+) -> bool {
     let padding = PaddingScheme::new_pkcs1v15_encrypt();
-    let dec_data = crypt_info
-        .private_key
-        .decrypt(padding, &enc_data)
-        .expect("Failed to decrypt");
-    return dec_data;
+    match crypt_info.private_key.decrypt(padding, &enc_data) {
+        Ok(decrypted) => {
+            let db_value: Option<String> = db_connection.get(username.as_str()).unwrap();
+            if let Some(password) = db_value {
+                return verify(decrypted, password.as_str()).unwrap();
+            }
+            return false;
+        }
+        Err(_) => false,
+    };
+    return false;
 }

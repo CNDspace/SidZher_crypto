@@ -18,3 +18,4 @@ crypto_module = { path= "./src/crypto_module" }
 serde = { version = "1.0.104", features = ["derive"] }
 base64 = "0.13.0"
 rsa = "0.4.0"
+redis = "0.21.5"

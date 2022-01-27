@@ -1,47 +1,34 @@
 use base64;
-// use crypto_module;
+use crypto_module;
 use database;
 use init_lib;
 use init_lib::ckeys::CKeys;
+use redis::Connection as RedisConnection;
 use rsa::PublicKeyEncoding;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
 
-// TODO: Need create struct  and forget variables between first and second step
+const SECOND_STEP: u8 = 2;
+const FOUR_STEP: u8 = 4;
 
 struct User {
-    _username: Option<String>,
-    _crypt_info: Option<CKeys>,
-    // public_key: Option<RSAPublicKey>,
-    // private_key: Option<RSAPrivateKey>,
-    // encrypted: Option<Vec<u8>>,
+    username: Option<String>,
+    crypt_info: Option<CKeys>,
 }
 
 impl User {
-    pub fn new(
-        username_data: Option<String>,
-        crypt_info_data: Option<CKeys>,
-        // public_key_data: Option<RSAPublicKey>,
-        // private_key_data: Option<RSAPrivateKey>,
-        // encrypted_data: Option<Vec<u8>>,
-    ) -> User {
+    pub fn new(username_data: Option<String>, crypt_info_data: Option<CKeys>) -> User {
         User {
-            _username: username_data,
-            _crypt_info: crypt_info_data
-            // public_key: public_key_data,
-            // private_key: private_key_data,
-            // encrypted: encrypted_data,
+            username: username_data,
+            crypt_info: crypt_info_data,
         }
     }
-    pub fn _default() -> User {
+    pub fn default() -> User {
         User {
-            _username: None,
-            _crypt_info: None,
-            // public_key: None,
-            // private_key: None,
-            // encrypted: None,
+            username: None,
+            crypt_info: None,
         }
     }
 }
@@ -54,40 +41,67 @@ pub struct Transit {
     data: String,
 }
 
-fn _check_username(username_struct: &Option<String>, user_json: &String) -> bool {
+impl Transit {
+    pub fn error(req_tupe_data: String) -> Transit {
+        Transit {
+            step: 0,
+            req_type: req_tupe_data,
+            user: String::from("Not_exist!"),
+            data: String::from("ERROR"),
+        }
+    }
+}
+
+fn check_username(username_struct: &Option<String>, user_json: &String) -> bool {
     if let Some(username) = username_struct {
         return if user_json.eq(username) { true } else { false };
     }
     false
 }
 
-fn parse_data(req_data: &str) -> Result<String> {
+fn parse_data(
+    req_data: &str,
+    mut user_struct: User,
+    db_connection: &mut RedisConnection,
+) -> Result<String> {
     return match serde_json::from_str(req_data) {
         Ok(parsed) => {
             let mut request_json: Transit = parsed;
-            // let mut user_struct = User::default();
             match request_json.step {
                 1 => {
-                    request_json.step = 2;
+                    CKeys::flush();
+                    request_json.step = SECOND_STEP;
                     let value_for_user = database::check_user_redis(&request_json.user);
                     if !value_for_user.eq("ERROR") {
                         let encrypt_keys = init_lib::crypto_module_gen();
                         request_json.data =
                             base64::encode(encrypt_keys.public_key.to_pkcs8().unwrap());
-                        User::new(
+                        user_struct = User::new(
                             Option::from(request_json.user.clone()),
                             Option::from(encrypt_keys),
-                            // Option::from(encrypt_keys.public_key.clone()),
-                            // Option::from(encrypt_keys.private_key.clone()),
-                            // Option::from(crypto_module::encrypt_data(
-                            //     &mut encrypt_keys,
-                            //     value_for_user.as_bytes(),
-                            //     )),
                         );
-                        CKeys::flush();
+                        let _read_struct = user_struct; // Костыль ебаный, нужно от него избавиться
+                    } else {
+                        request_json = Transit::error(request_json.req_type);
+                    };
+                }
+                3 => {
+                    request_json.step = FOUR_STEP;
+                    if check_username(&user_struct.username, &request_json.user) {
+                        if let Some(mut encrypt_key) = user_struct.crypt_info {
+                            let json_data = request_json.data.clone();
+                            let username = request_json.user.clone();
+                            if crypto_module::decrypt_and_compare_data(
+                                &mut encrypt_key,
+                                base64::decode(json_data).unwrap(),
+                                username,
+                                db_connection,
+                            ) {
+                                request_json.data = "OK".to_string()
+                            }
+                        };
                     }
                 }
-                3 => {}
                 _ => {}
             }
             let response_json = serde_json::to_string_pretty(&request_json);
@@ -111,12 +125,12 @@ fn send_data(mut stream: &TcpStream, request_message: String) {
     stream.write(response.as_bytes()).unwrap();
 }
 
-fn handle_connection(mut stream: TcpStream) {
+fn handle_connection(mut stream: TcpStream, db_connection: &mut RedisConnection) {
     let mut buffer = String::new();
 
     stream.read_to_string(&mut buffer).unwrap();
 
-    let serealized_data = parse_data(buffer.as_str());
+    let serealized_data = parse_data(buffer.as_str(), User::default(), db_connection);
 
     match serealized_data {
         Ok(parsed) => send_data(&stream, parsed),
@@ -127,32 +141,18 @@ fn handle_connection(mut stream: TcpStream) {
 }
 
 fn main() {
-    let _connection = init_lib::init_redis_db_connection().unwrap();
-    let listener = TcpListener::bind("127.0.0.1:5141");
-    if let Ok(listener_ok) = listener {
-        for stream in listener_ok.incoming() {
-            let stream = stream.unwrap();
-            handle_connection(stream);
+    match init_lib::init_redis_db_connection() {
+        Ok(mut connect) => {
+            let listener = TcpListener::bind("127.0.0.1:5141");
+            if let Ok(listener_ok) = listener {
+                for stream in listener_ok.incoming() {
+                    let stream = stream.unwrap();
+                    handle_connection(stream, &mut connect);
+                }
+            } else {
+                println!("Error bind listener!")
+            }
         }
-    } else {
-        println!("Error bind listener!")
+        Err(error) => println!("Failed connect to database!\n{}", error),
     }
-
-    // // let _connect = init_lib::init_db_connection();
-    // let user: String = String::from("Not_kek");
-    // let password: String = String::from("Kek_password");
-    // // // register_user(user, password);
-    // database::check_user(&user, &password);
-    //
-    // // Init Crypto
-    // let mut crypto_config = init_lib::crypto_module_gen();
-    //
-    // // Encrypt
-    // let data = b"Think_test";
-    // let enc_data = crypto_module::encrypt_data(&mut crypto_config, data);
-    // println!("{}", String::from_utf8_lossy(&*enc_data));
-    //
-    // // Decrypt
-    // let dec_data = crypto_module::decrypt_data(&mut crypto_config, enc_data);
-    // println!("{}", String::from_utf8_lossy(&*dec_data));
 }
