@@ -10,7 +10,9 @@ use serde_json::Result;
 use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
 
+const FIRST_STEP: u8 = 1;
 const SECOND_STEP: u8 = 2;
+const THIRD_STEP: u8 = 3;
 const FOUR_STEP: u8 = 4;
 
 struct User {
@@ -68,7 +70,7 @@ fn parse_data(
         Ok(parsed) => {
             let mut request_json: Transit = parsed;
             match request_json.step {
-                1 => {
+                FIRST_STEP => {
                     CKeys::flush();
                     request_json.step = SECOND_STEP;
                     let value_for_user = database::check_user_redis(&request_json.user);
@@ -85,7 +87,7 @@ fn parse_data(
                         request_json = Transit::error(request_json.req_type);
                     };
                 }
-                3 => {
+                THIRD_STEP => {
                     request_json.step = FOUR_STEP;
                     if check_username(&user_struct.username, &request_json.user) {
                         if let Some(mut encrypt_key) = user_struct.crypt_info {
