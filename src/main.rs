@@ -4,7 +4,7 @@ use database;
 use init_lib;
 use init_lib::ckeys::CKeys;
 use redis::Connection as RedisConnection;
-use rsa::PublicKeyEncoding;
+use rsa::PublicKeyPemEncoding;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 use std::io::prelude::*;
@@ -76,8 +76,8 @@ fn parse_data(
                     let value_for_user = database::check_user_redis(&request_json.user);
                     if !value_for_user.eq("ERROR") {
                         let encrypt_keys = init_lib::crypto_module_gen();
-                        request_json.data =
-                            base64::encode(encrypt_keys.public_key.to_pkcs8().unwrap());
+                        request_json.data = encrypt_keys.public_key.to_pem_pkcs8().unwrap();
+                        // base64::encode(encrypt_keys.public_key.to_pkcs8().unwrap());
                         user_struct = User::new(
                             Option::from(request_json.user.clone()),
                             Option::from(encrypt_keys),
