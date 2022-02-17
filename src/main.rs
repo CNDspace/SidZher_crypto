@@ -105,6 +105,8 @@ fn parse_data(
                                 request_json.data = "WRONG PASSWORD!".to_string();
                             }
                         };
+                    } else {
+                        request_json.data = "ERROR CHECK USERNAME!".to_string()
                     }
                 }
                 _ => {}
@@ -131,7 +133,7 @@ fn send_data(mut stream: &TcpStream, request_message: String) {
 }
 
 fn handle_connection(mut stream: TcpStream, db_connection: &mut RedisConnection) {
-    let mut buffer = [0 as u8; 1024];
+    let mut buffer = [0 as u8; 2024];
 
     stream
         .set_nonblocking(true)
