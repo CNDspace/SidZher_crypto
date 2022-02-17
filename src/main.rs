@@ -8,8 +8,9 @@ use rsa::PublicKeyPemEncoding;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 use std::io::prelude::*;
-use std::io::{self, BufWriter, Read};
+use std::io::{self, Read};
 use std::net::{TcpListener, TcpStream};
+use std::u8;
 
 const FIRST_STEP: u8 = 1;
 const SECOND_STEP: u8 = 2;
@@ -156,7 +157,7 @@ fn handle_connection(mut stream: TcpStream, db_connection: &mut RedisConnection)
                     Err(e) => send_data(&stream, e.to_string()),
                 }
 
-                BufWriter::new(&stream);
+                buffer.map(|mut _x| _x = 0 as u8);
                 // break;
                 stream.flush().unwrap();
             }
