@@ -152,7 +152,7 @@ fn handle_connection(mut stream: TcpStream, db_connection: &mut RedisConnection)
                     Err(e) => send_data(&stream, e.to_string()),
                 }
 
-                stream.flush().unwrap();
+                // stream.flush().unwrap();
             }
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
                 // wait until network socket is ready, typically implemented
