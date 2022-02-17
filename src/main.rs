@@ -101,6 +101,8 @@ fn parse_data(
                                 db_connection,
                             ) {
                                 request_json.data = "OK".to_string()
+                            } else {
+                                request_json.data = "WRONG PASSWORD!".to_string();
                             }
                         };
                     }
