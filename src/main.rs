@@ -146,6 +146,8 @@ fn handle_connection(mut stream: TcpStream, db_connection: &mut RedisConnection)
                     .trim_matches(char::from(0))
                     .to_string();
 
+                println!("Received from front:\n{}", string_buffer);
+
                 let serealized_data =
                     parse_data(string_buffer.as_str(), User::default(), db_connection);
 
@@ -154,7 +156,8 @@ fn handle_connection(mut stream: TcpStream, db_connection: &mut RedisConnection)
                     Err(e) => send_data(&stream, e.to_string()),
                 }
 
-                // stream.flush().unwrap();
+                // break;
+                stream.flush().unwrap();
             }
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
                 // wait until network socket is ready, typically implemented
