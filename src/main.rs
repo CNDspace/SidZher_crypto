@@ -46,10 +46,10 @@ pub struct Transit {
 }
 
 impl Transit {
-    pub fn error(req_tupe_data: String) -> Transit {
+    pub fn error(req_type_data: String) -> Transit {
         Transit {
             step: 0,
-            req_type: req_tupe_data,
+            req_type: req_type_data,
             user: String::from("Not_exist!"),
             data: String::from("ERROR"),
         }
@@ -112,7 +112,7 @@ fn parse_data(
                 }
                 _ => {}
             }
-            let response_json = serde_json::to_string_pretty(&request_json);
+            let response_json = serde_json::to_string(&request_json);
             response_json
         }
         Err(e) => {
@@ -122,7 +122,7 @@ fn parse_data(
                 user: "".to_string(),
                 data: format!("Error: {}", e.to_string()),
             };
-            let response_json = serde_json::to_string_pretty(&error_struct_parse);
+            let response_json = serde_json::to_string(&error_struct_parse);
             response_json
         }
     };
@@ -142,35 +142,27 @@ fn handle_connection(mut stream: TcpStream, db_connection: &mut RedisConnection)
 
     loop {
         match stream.read(&mut buffer) {
-            Ok(_) => {
-                let string_buffer = String::from_utf8_lossy(&buffer)
-                    .trim_matches(char::from(0))
-                    .to_string();
-
-                println!("Received from front:\n{}", string_buffer);
-
-                let serealized_data =
-                    parse_data(string_buffer.as_str(), User::default(), db_connection);
-
-                match serealized_data {
-                    Ok(parsed) => send_data(&stream, parsed),
-                    Err(e) => send_data(&stream, e.to_string()),
-                }
-
-                for i in 0..buffer.len() {
-                    buffer[i] = 0 as u8;
-                }
-                // break;
-                stream.flush().unwrap();
-            }
+            Ok(_) => break,
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-                // wait until network socket is ready, typically implemented
-                // via platform-specific APIs such as epoll or IOCP
                 continue;
             }
             Err(e) => panic!("encountered IO error: {}", e),
         }
     }
+
+    let string_buffer = String::from_utf8_lossy(&buffer)
+        .trim_matches(char::from(0))
+        .to_string();
+
+    println!("Received from front:\n{}", string_buffer);
+
+    let serialized_data = parse_data(string_buffer.as_str(), User::default(), db_connection);
+
+    match serialized_data {
+        Ok(parsed) => send_data(&stream, parsed),
+        Err(e) => send_data(&stream, e.to_string()),
+    }
+    stream.flush().unwrap();
 }
 
 fn main() {
