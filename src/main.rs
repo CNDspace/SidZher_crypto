@@ -133,7 +133,7 @@ fn send_data(mut stream: &TcpStream, request_message: String) {
 }
 
 fn handle_connection(mut stream: TcpStream, db_connection: &mut RedisConnection) {
-    let mut buffer = [0 as u8; 2024];
+    let mut buffer = [0 as u8; 2048];
 
     stream
         .set_nonblocking(true)
@@ -156,6 +156,7 @@ fn handle_connection(mut stream: TcpStream, db_connection: &mut RedisConnection)
                     Err(e) => send_data(&stream, e.to_string()),
                 }
 
+                buffer = [0 as u8; 2048];
                 // break;
                 stream.flush().unwrap();
             }
