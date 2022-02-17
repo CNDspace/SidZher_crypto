@@ -158,7 +158,7 @@ fn handle_connection(mut stream: TcpStream, db_connection: &mut RedisConnection)
         Err(e) => send_data(&stream, e.to_string()),
     }
 
-    // stream.flush().unwrap();
+    stream.flush().unwrap();
 }
 
 fn main() {
