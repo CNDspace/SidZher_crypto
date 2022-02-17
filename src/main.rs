@@ -8,7 +8,9 @@ use rsa::PublicKeyPemEncoding;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
 use std::io::prelude::*;
+use std::io::{self, Read};
 use std::net::{TcpListener, TcpStream};
+use std::time::Duration;
 
 const FIRST_STEP: u8 = 1;
 const SECOND_STEP: u8 = 2;
@@ -128,18 +130,36 @@ fn send_data(mut stream: &TcpStream, request_message: String) {
 }
 
 fn handle_connection(mut stream: TcpStream, db_connection: &mut RedisConnection) {
-    let mut buffer = String::new();
+    let mut buffer = [0 as u8; 1024];
 
-    stream.read_to_string(&mut buffer).unwrap();
+    stream
+        .set_nonblocking(true)
+        .expect("Failed to set nonblocking mode");
 
-    let serealized_data = parse_data(buffer.as_str(), User::default(), db_connection);
+    loop {
+        match stream.read(&mut buffer) {
+            Ok(_) => break,
+            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                // wait until network socket is ready, typically implemented
+                // via platform-specific APIs such as epoll or IOCP
+                continue;
+            }
+            Err(e) => panic!("encountered IO error: {}", e),
+        }
+    }
+
+    let string_buffer = String::from_utf8_lossy(&buffer)
+        .trim_matches(char::from(0))
+        .to_string();
+
+    let serealized_data = parse_data(string_buffer.as_str(), User::default(), db_connection);
 
     match serealized_data {
         Ok(parsed) => send_data(&stream, parsed),
         Err(e) => send_data(&stream, e.to_string()),
     }
 
-    stream.flush().unwrap();
+    // stream.flush().unwrap();
 }
 
 fn main() {
