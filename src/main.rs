@@ -10,7 +10,6 @@ use serde_json::Result;
 use std::io::prelude::*;
 use std::io::{self, Read};
 use std::net::{TcpListener, TcpStream};
-use std::time::Duration;
 
 const FIRST_STEP: u8 = 1;
 const SECOND_STEP: u8 = 2;
