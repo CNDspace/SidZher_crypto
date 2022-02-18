@@ -17,25 +17,25 @@ const SECOND_STEP: u8 = 2;
 const THIRD_STEP: u8 = 3;
 const FOUR_STEP: u8 = 4;
 
-struct User {
-    username: Option<String>,
-    crypt_info: Option<CKeys>,
-}
-
-impl User {
-    pub fn new(username_data: Option<String>, crypt_info_data: Option<CKeys>) -> User {
-        User {
-            username: username_data,
-            crypt_info: crypt_info_data,
-        }
-    }
-    pub fn default() -> User {
-        User {
-            username: None,
-            crypt_info: None,
-        }
-    }
-}
+// struct User {
+//     // username: Option<String>,
+//     crypt_info: Option<CKeys>,
+// }
+//
+// impl User {
+//     // pub fn new(_username_data: Option<String>, crypt_info_data: Option<CKeys>) -> User {
+//     //     User {
+//     //         // username: username_data,
+//     //         crypt_info: crypt_info_data,
+//     //     }
+//     // }
+//     pub fn default() -> User {
+//         User {
+//             // username: None,
+//             crypt_info: None,
+//         }
+//     }
+// }
 
 #[derive(Serialize, Deserialize)]
 pub struct Transit {
@@ -56,20 +56,17 @@ impl Transit {
     }
 }
 
-fn check_username(username_struct: &Option<String>, user_json: &String) -> bool {
+fn _check_username(username_struct: &Option<String>, user_json: &String) -> bool {
     if let Some(username) = username_struct {
         return if user_json.eq(username) { true } else { false };
     }
     false
 }
 
-fn parse_data(
-    req_data: &str,
-    mut user_struct: User,
-    db_connection: &mut RedisConnection,
-) -> Result<String> {
+fn parse_data(req_data: &str, db_connection: &mut RedisConnection) -> Result<String> {
     return match serde_json::from_str(req_data) {
         Ok(parsed) => {
+            let mut encrypt_keys = init_lib::crypto_module_gen();
             let mut request_json: Transit = parsed;
             match request_json.step {
                 FIRST_STEP => {
@@ -77,37 +74,33 @@ fn parse_data(
                     request_json.step = SECOND_STEP;
                     let value_for_user = database::check_user_redis(&request_json.user);
                     if !value_for_user.eq("ERROR") {
-                        let encrypt_keys = init_lib::crypto_module_gen();
+                        // let encrypt_keys = init_lib::crypto_module_gen();
                         request_json.data = encrypt_keys.public_key.to_pem_pkcs8().unwrap();
                         // base64::encode(encrypt_keys.public_key.to_pkcs8().unwrap());
-                        user_struct = User::new(
-                            Option::from(request_json.user.clone()),
-                            Option::from(encrypt_keys),
-                        );
-                        let _read_struct = user_struct; // Костыль ебаный, нужно от него избавиться
+                        // read_struct.crypt_info = Option::from(encrypt_keys);
+                        // user_struct = User::new(
+                        //     Option::from(request_json.user.clone()),
+                        //     Option::from(encrypt_keys),
+                        // );
+                        // let read_struct = user_struct; // Костыль ебаный, нужно от него избавиться
                     } else {
                         request_json = Transit::error(request_json.req_type);
                     };
                 }
                 THIRD_STEP => {
                     request_json.step = FOUR_STEP;
-                    if check_username(&user_struct.username, &request_json.user) {
-                        if let Some(mut encrypt_key) = user_struct.crypt_info {
-                            let json_data = request_json.data.clone();
-                            let username = request_json.user.clone();
-                            if crypto_module::decrypt_and_compare_data(
-                                &mut encrypt_key,
-                                base64::decode(json_data).unwrap(),
-                                username,
-                                db_connection,
-                            ) {
-                                request_json.data = "OK".to_string()
-                            } else {
-                                request_json.data = "WRONG PASSWORD!".to_string();
-                            }
-                        };
+                    let json_data = request_json.data.clone();
+                    let username = request_json.user.clone();
+                    let raw_data = base64::decode(json_data).unwrap();
+                    if crypto_module::decrypt_and_compare_data(
+                        &mut encrypt_keys,
+                        raw_data,
+                        username,
+                        db_connection,
+                    ) {
+                        request_json.data = "OK".to_string()
                     } else {
-                        request_json.data = "ERROR CHECK USERNAME!".to_string()
+                        request_json.data = "WRONG PASSWORD!".to_string();
                     }
                 }
                 _ => {}
@@ -156,7 +149,7 @@ fn handle_connection(mut stream: TcpStream, db_connection: &mut RedisConnection)
 
     println!("Received from front:\n{}", string_buffer);
 
-    let serialized_data = parse_data(string_buffer.as_str(), User::default(), db_connection);
+    let serialized_data = parse_data(string_buffer.as_str(), db_connection);
 
     match serialized_data {
         Ok(parsed) => send_data(&stream, parsed),
