@@ -24,7 +24,11 @@ pub fn decrypt_and_compare_data(
         Ok(decrypted) => {
             let db_value: Option<String> = db_connection.get(username.as_str()).unwrap();
             if let Some(password) = db_value {
-                return verify(decrypted, password.as_str()).unwrap();
+                return match verify(decrypted, password.as_str()) {
+                    Ok(_) => true,
+                    Err(_) => false,
+                };
+                // return verify(decrypted, password.as_str()).unwrap();
             }
             return false;
         }

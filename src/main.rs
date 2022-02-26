@@ -1,12 +1,9 @@
-use base64;
-use crypto_module;
-use database;
-use init_lib;
 use init_lib::ckeys::CKeys;
 use redis::Connection as RedisConnection;
 use rsa::PublicKeyPemEncoding;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
+
 use std::io::prelude::*;
 use std::io::{self, Read};
 use std::net::{TcpListener, TcpStream};
@@ -17,18 +14,19 @@ const SECOND_STEP: u8 = 2;
 const THIRD_STEP: u8 = 3;
 const FOUR_STEP: u8 = 4;
 
-// struct User {
-//     // username: Option<String>,
-//     crypt_info: Option<CKeys>,
-// }
-//
-// impl User {
-//     // pub fn new(_username_data: Option<String>, crypt_info_data: Option<CKeys>) -> User {
-//     //     User {
-//     //         // username: username_data,
-//     //         crypt_info: crypt_info_data,
-//     //     }
-//     // }
+struct User {
+    // username: Option<String>,
+    crypt_info: Option<CKeys>,
+}
+
+impl User {
+    fn new(_username_data: Option<String>, crypt_info_data: Option<CKeys>) -> User {
+        User {
+            // username: username_data,
+            crypt_info: crypt_info_data,
+        }
+    }
+}
 //     pub fn default() -> User {
 //         User {
 //             // username: None,
@@ -63,26 +61,24 @@ fn _check_username(username_struct: &Option<String>, user_json: &String) -> bool
     false
 }
 
-fn parse_data(req_data: &str, db_connection: &mut RedisConnection) -> Result<String> {
+fn parse_data(
+    req_data: &str,
+    db_connection: &mut RedisConnection,
+    user_struct: &mut User,
+) -> Result<String> {
     return match serde_json::from_str(req_data) {
         Ok(parsed) => {
-            let mut encrypt_keys = init_lib::crypto_module_gen();
             let mut request_json: Transit = parsed;
             match request_json.step {
                 FIRST_STEP => {
-                    CKeys::flush();
+                    // CKeys::flush();
                     request_json.step = SECOND_STEP;
                     let value_for_user = database::check_user_redis(&request_json.user);
                     if !value_for_user.eq("ERROR") {
+                        let encrypt_keys = init_lib::crypto_module_gen();
                         // let encrypt_keys = init_lib::crypto_module_gen();
                         request_json.data = encrypt_keys.public_key.to_pem_pkcs8().unwrap();
-                        // base64::encode(encrypt_keys.public_key.to_pkcs8().unwrap());
-                        // read_struct.crypt_info = Option::from(encrypt_keys);
-                        // user_struct = User::new(
-                        //     Option::from(request_json.user.clone()),
-                        //     Option::from(encrypt_keys),
-                        // );
-                        // let read_struct = user_struct; // Костыль ебаный, нужно от него избавиться
+                        user_struct.crypt_info = Some(encrypt_keys);
                     } else {
                         request_json = Transit::error(request_json.req_type);
                     };
@@ -92,15 +88,17 @@ fn parse_data(req_data: &str, db_connection: &mut RedisConnection) -> Result<Str
                     let json_data = request_json.data.clone();
                     let username = request_json.user.clone();
                     let raw_data = base64::decode(json_data).unwrap();
-                    if crypto_module::decrypt_and_compare_data(
-                        &mut encrypt_keys,
-                        raw_data,
-                        username,
-                        db_connection,
-                    ) {
-                        request_json.data = "OK".to_string()
-                    } else {
-                        request_json.data = "WRONG PASSWORD!".to_string();
+                    if let Some(ref mut crypt_info) = user_struct.crypt_info {
+                        if crypto_module::decrypt_and_compare_data(
+                            crypt_info,
+                            raw_data,
+                            username,
+                            db_connection,
+                        ) {
+                            request_json.data = "OK".to_string()
+                        } else {
+                            request_json.data = "WRONG PASSWORD!".to_string();
+                        }
                     }
                 }
                 _ => {}
@@ -126,7 +124,11 @@ fn send_data(mut stream: &TcpStream, request_message: String) {
     stream.write(response.as_bytes()).unwrap();
 }
 
-fn handle_connection(mut stream: TcpStream, db_connection: &mut RedisConnection) {
+fn handle_connection(
+    mut stream: TcpStream,
+    db_connection: &mut RedisConnection,
+    user_struct: &mut User,
+) {
     let mut buffer = [0 as u8; 2048];
 
     stream
@@ -149,7 +151,7 @@ fn handle_connection(mut stream: TcpStream, db_connection: &mut RedisConnection)
 
     println!("Received from front:\n{}", string_buffer);
 
-    let serialized_data = parse_data(string_buffer.as_str(), db_connection);
+    let serialized_data = parse_data(string_buffer.as_str(), db_connection, user_struct);
 
     match serialized_data {
         Ok(parsed) => send_data(&stream, parsed),
@@ -163,9 +165,10 @@ fn main() {
         Ok(mut connect) => {
             let listener = TcpListener::bind("127.0.0.1:5141");
             if let Ok(listener_ok) = listener {
+                let mut init_user = User::new(Some("".to_string()), Some(CKeys::flush()));
                 for stream in listener_ok.incoming() {
                     let stream = stream.unwrap();
-                    handle_connection(stream, &mut connect);
+                    handle_connection(stream, &mut connect, &mut init_user);
                 }
             } else {
                 println!("Error bind listener!")
