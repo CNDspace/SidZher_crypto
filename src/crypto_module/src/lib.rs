@@ -24,9 +24,11 @@ pub fn decrypt_and_compare_data_auth(
         Ok(decrypted) => {
             let db_value: Option<String> = db_connection.get(username.as_str()).unwrap();
             if let Some(password) = db_value {
-                return match verify(decrypted, password.as_str()) {
-                    Ok(_) => true,
-                    Err(_) => false,
+                let decrypted_u8: &[u8] = &decrypted;
+                return if verify(&decrypted_u8, password.as_str()).unwrap() {
+                    true
+                } else {
+                    false
                 };
             }
             return false;
