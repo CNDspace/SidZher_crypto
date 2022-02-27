@@ -47,10 +47,9 @@ pub fn decrypt_and_compare_data_reg(
     match crypt_info.private_key.decrypt(padding, &enc_data) {
         Ok(decrypted) => {
             let hashed_value = hash(decrypted, DEFAULT_COST).unwrap();
-            match database::register_user_redis(username, hashed_value) {
-                Ok(_) => true,
-                Err(_) => false,
-            };
+            if database::register_user_redis(username, hashed_value) {
+                return true;
+            }
             return false;
         }
         Err(_) => false,

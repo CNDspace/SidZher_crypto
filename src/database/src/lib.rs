@@ -47,11 +47,11 @@ pub fn check_user_redis(username: &String) -> String {
     };
 }
 
-pub fn register_user_redis(
-    username_redis: String,
-    password_redis: String,
-) -> redis::RedisResult<()> {
+pub fn register_user_redis(username_redis: String, password_redis: String) -> bool {
     let mut connection = init_redis_db_connection().unwrap();
-    let _: () = connection.set(username_redis, password_redis)?;
-    Ok(())
+    // let _: () = connection.set(username_redis, password_redis);
+    if let Ok(_) = connection.set(username_redis, password_redis) {
+        return true;
+    }
+    return false;
 }
