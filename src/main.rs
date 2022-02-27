@@ -48,7 +48,7 @@ impl Transit {
         Transit {
             step: 0,
             req_type: req_type_data,
-            user: String::from("Not_exist!"),
+            user: String::from("ERROR"),
             data: String::from("ERROR"),
         }
     }
@@ -86,6 +86,8 @@ fn parse_data(
                         let encrypt_keys = init_lib::crypto_module_gen();
                         request_json.data = encrypt_keys.public_key.to_pem_pkcs8().unwrap();
                         user_struct.crypt_info = Some(encrypt_keys);
+                    } else {
+                        request_json = Transit::error(request_json.req_type)
                     }
                 }
                 THIRD_STEP => {
