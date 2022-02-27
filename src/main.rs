@@ -71,33 +71,51 @@ fn parse_data(
             let mut request_json: Transit = parsed;
             match request_json.step {
                 FIRST_STEP => {
-                    // CKeys::flush();
                     request_json.step = SECOND_STEP;
-                    let value_for_user = database::check_user_redis(&request_json.user);
-                    if !value_for_user.eq("ERROR") {
+                    if request_json.req_type == "auth".to_string() {
+                        if !database::check_user_redis(&request_json.user).eq("ERROR") {
+                            let encrypt_keys = init_lib::crypto_module_gen();
+                            request_json.data = encrypt_keys.public_key.to_pem_pkcs8().unwrap();
+                            user_struct.crypt_info = Some(encrypt_keys);
+                        } else {
+                            request_json = Transit::error(request_json.req_type);
+                        };
+                    } else if request_json.req_type == "reg".to_string() {
                         let encrypt_keys = init_lib::crypto_module_gen();
-                        // let encrypt_keys = init_lib::crypto_module_gen();
                         request_json.data = encrypt_keys.public_key.to_pem_pkcs8().unwrap();
                         user_struct.crypt_info = Some(encrypt_keys);
-                    } else {
-                        request_json = Transit::error(request_json.req_type);
-                    };
+                    }
                 }
                 THIRD_STEP => {
                     request_json.step = FOUR_STEP;
-                    let json_data = request_json.data.clone();
-                    let username = request_json.user.clone();
-                    let raw_data = base64::decode(json_data).unwrap();
-                    if let Some(ref mut crypt_info) = user_struct.crypt_info {
-                        if crypto_module::decrypt_and_compare_data(
-                            crypt_info,
-                            raw_data,
-                            username,
-                            db_connection,
-                        ) {
-                            request_json.data = "OK".to_string()
-                        } else {
-                            request_json.data = "WRONG PASSWORD!".to_string();
+                    if request_json.req_type == "auth".to_string() {
+                        let json_data = request_json.data.clone();
+                        let username = request_json.user.clone();
+                        if let Some(ref mut crypt_info) = user_struct.crypt_info {
+                            if crypto_module::decrypt_and_compare_data_auth(
+                                crypt_info,
+                                base64::decode(json_data).unwrap(),
+                                username,
+                                db_connection,
+                            ) {
+                                request_json.data = "OK".to_string()
+                            } else {
+                                request_json.data = "FAIL".to_string();
+                            }
+                        }
+                    } else if request_json.req_type == "reg".to_string() {
+                        let json_data = request_json.data.clone();
+                        let username = request_json.user.clone();
+                        if let Some(ref mut crypt_info) = user_struct.crypt_info {
+                            if crypto_module::decrypt_and_compare_data_reg(
+                                crypt_info,
+                                base64::decode(json_data).unwrap(),
+                                username,
+                            ) {
+                                request_json.data = "OK".to_string()
+                            } else {
+                                request_json.data = "FAIL".to_string();
+                            }
                         }
                     }
                 }

@@ -3,7 +3,7 @@ use self::schema::data;
 use self::schema::data::dsl::*;
 use diesel::prelude::*;
 use init_lib::{init_db_connection, init_redis_db_connection};
-use redis::{Commands, Connection as RedisConnection};
+use redis::Commands;
 
 pub mod models;
 pub mod schema;
@@ -48,10 +48,10 @@ pub fn check_user_redis(username: &String) -> String {
 }
 
 pub fn register_user_redis(
-    connection: &mut RedisConnection,
     username_redis: String,
     password_redis: String,
 ) -> redis::RedisResult<()> {
+    let mut connection = init_redis_db_connection().unwrap();
     let _: () = connection.set(username_redis, password_redis)?;
     Ok(())
 }

@@ -1,5 +1,5 @@
 extern crate bcrypt;
-use bcrypt::verify;
+use bcrypt::{hash, verify, DEFAULT_COST};
 use init_lib::ckeys::CKeys;
 use redis::{Commands, Connection as RedisConnection};
 use rsa::{PaddingScheme, PublicKey};
@@ -13,7 +13,7 @@ pub fn encrypt_data(crypt_info: &mut CKeys, data: &[u8]) -> Vec<u8> {
     return enc_data;
 }
 
-pub fn decrypt_and_compare_data(
+pub fn decrypt_and_compare_data_auth(
     crypt_info: &mut CKeys,
     enc_data: Vec<u8>,
     username: String,
@@ -28,8 +28,27 @@ pub fn decrypt_and_compare_data(
                     Ok(_) => true,
                     Err(_) => false,
                 };
-                // return verify(decrypted, password.as_str()).unwrap();
             }
+            return false;
+        }
+        Err(_) => false,
+    };
+    return false;
+}
+
+pub fn decrypt_and_compare_data_reg(
+    crypt_info: &mut CKeys,
+    enc_data: Vec<u8>,
+    username: String,
+) -> bool {
+    let padding = PaddingScheme::new_pkcs1v15_encrypt();
+    match crypt_info.private_key.decrypt(padding, &enc_data) {
+        Ok(decrypted) => {
+            let hashed_value = hash(decrypted, DEFAULT_COST).unwrap();
+            match database::register_user_redis(username, hashed_value) {
+                Ok(_) => true,
+                Err(_) => false,
+            };
             return false;
         }
         Err(_) => false,
