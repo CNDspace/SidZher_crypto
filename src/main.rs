@@ -80,7 +80,9 @@ fn parse_data(
                         } else {
                             request_json = Transit::error(request_json.req_type);
                         };
-                    } else if request_json.req_type == "reg".to_string() {
+                    } else if request_json.req_type == "reg".to_string()
+                        && database::check_user_redis(&request_json.user).eq("ERROR")
+                    {
                         let encrypt_keys = init_lib::crypto_module_gen();
                         request_json.data = encrypt_keys.public_key.to_pem_pkcs8().unwrap();
                         user_struct.crypt_info = Some(encrypt_keys);
