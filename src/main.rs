@@ -27,13 +27,6 @@ impl User {
         }
     }
 }
-//     pub fn default() -> User {
-//         User {
-//             // username: None,
-//             crypt_info: None,
-//         }
-//     }
-// }
 
 #[derive(Serialize, Deserialize)]
 pub struct Transit {
