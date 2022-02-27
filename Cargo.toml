@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [[bin]]
-name = "sidzher_crypto.bin"
+name = "sidzher_crypto_bin"
 path = "src/main.rs"
 
 [dependencies]
