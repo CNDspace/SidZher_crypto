@@ -72,3 +72,4 @@ stateDiagram-v2
 
 `data` field used for transfer public key, encrypted data and answer for login
 
+
