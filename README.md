@@ -1,3 +1,5 @@
+[![Build](https://github.com/CNDspace/SidZher_crypto/actions/workflows/rust.yml/badge.svg)](https://github.com/CNDspace/SidZher_crypto/actions/workflows/rust.yml)
+
 # SidZher crypto project
 
 ### RU Краткое описание
