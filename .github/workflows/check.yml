@@ -1,4 +1,4 @@
-name: Check
+name: pipeline
 
 on:
   push:
