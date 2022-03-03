@@ -1,6 +1,11 @@
 name: Check
 
 on:
+  workflow_dispatch:
+    inputs:
+      job:
+        required: true
+        default: 'check'
   push:
     branches: [ master ]
   pull_request:
