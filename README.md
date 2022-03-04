@@ -18,15 +18,15 @@ Author: Alexander Zherdev
 cargo run
 ```
 Or use compile build in `<project_path>/target/debug/sidzher_crypto_bin`
+```shell
+cargo build
+```
 
 Debug build in runtime slow than release, if you not debug Sidzher crypto use release build
 
 ### Release build
 ```shell
 cargo run --release
-```
-```shell
-cargo build
 ```
 Or use compile build in `<project_path>/target/release/sidzher_crypto_bin`:
 ```shell
