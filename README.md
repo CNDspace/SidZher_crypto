@@ -12,6 +12,19 @@ This project is used to generate asymmetric keys and interact with the database 
 
 Author: Alexander Zherdev
 
+## Build and run
+### Debug build
+```shell
+cargo run
+```
+Or use compile build in `<project_path>/target/debug/sidzher_crypto_bin`
+
+### Release build
+```shell
+cargo run --release
+```
+Or use compile build in `<project_path>/target/release/sidzher_crypto_bin`
+
 
 ## Code flow graph
 ```mermaid
