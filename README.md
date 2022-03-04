@@ -13,22 +13,24 @@ This project is used to generate asymmetric keys and interact with the database 
 Author: Alexander Zherdev
 
 ## Build and run
-### Debug build
+### Debug run
 ```shell
 cargo run
 ```
 Or use compile build in `<project_path>/target/debug/sidzher_crypto_bin`
+### Debub build
 ```shell
 cargo build
 ```
 
 Debug build in runtime slow than release, if you not debug Sidzher crypto use release build
 
-### Release build
+### Release run
 ```shell
 cargo run --release
 ```
-Or use compile build in `<project_path>/target/release/sidzher_crypto_bin`:
+Or use compile build in `<project_path>/target/release/sidzher_crypto_bin`
+### Release build
 ```shell
 cargo build --release
 ```
