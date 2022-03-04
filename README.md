@@ -61,7 +61,7 @@ stateDiagram-v2
     check_user_in_database  --> error_check_user
     error_check_user --> send_error
     check_user_in_database --> create_json_with_public_key
-    create_json_with_public_key --> send_data
+    create_json_with_public_key --> send_key
     third_step_and_type_auth --> decrypt_and_compare_data
     decrypt_and_compare_data --> veryfy_pass_bcrypt
     veryfy_pass_bcrypt --> check_user_in_db
