@@ -1,5 +1,5 @@
 extern crate bcrypt;
-use bcrypt::{hash, verify, BcryptResult, DEFAULT_COST};
+use bcrypt::{hash, verify, DEFAULT_COST};
 use init_lib::ckeys::CKeys;
 use redis::{Commands, Connection as RedisConnection};
 use rsa::{PaddingScheme, PublicKey};
@@ -28,8 +28,8 @@ pub fn decrypt_and_compare_data_auth(
                 match verify(&decrypted_u8, password.as_str()) {
                     Ok(condition) => return if condition { true } else { false },
                     Err(_) => false,
-                }
-            }
+                };
+            };
             return false;
         }
         Err(_) => false,
