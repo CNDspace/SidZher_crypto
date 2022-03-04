@@ -1,5 +1,5 @@
 extern crate bcrypt;
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{hash, verify, BcryptResult, DEFAULT_COST};
 use init_lib::ckeys::CKeys;
 use redis::{Commands, Connection as RedisConnection};
 use rsa::{PaddingScheme, PublicKey};
@@ -25,11 +25,16 @@ pub fn decrypt_and_compare_data_auth(
             let db_value: Option<String> = db_connection.get(username.as_str()).unwrap();
             if let Some(password) = db_value {
                 let decrypted_u8: &[u8] = &decrypted;
-                return if verify(&decrypted_u8, password.as_str()).unwrap() {
-                    true
-                } else {
-                    false
-                };
+                match verify(&decrypted_u8, password.as_str()) {
+                    Ok(condition) => {
+                        if condition {
+                            return true;
+                        } else {
+                            false
+                        }
+                    }
+                    Err(_) => false,
+                }
             }
             return false;
         }
