@@ -94,4 +94,5 @@ stateDiagram-v2
 
 `data` field used for transfer public key, encrypted data and answer for login
 
-
+# Links
+[SidZher](https://github.com/sarmatsid/SidZher) - our main project
