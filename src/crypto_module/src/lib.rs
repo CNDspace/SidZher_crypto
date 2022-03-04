@@ -26,13 +26,7 @@ pub fn decrypt_and_compare_data_auth(
             if let Some(password) = db_value {
                 let decrypted_u8: &[u8] = &decrypted;
                 match verify(&decrypted_u8, password.as_str()) {
-                    Ok(condition) => {
-                        if condition {
-                            return true;
-                        } else {
-                            false
-                        }
-                    }
+                    Ok(condition) => return if condition { true } else { false },
                     Err(_) => false,
                 }
             }
