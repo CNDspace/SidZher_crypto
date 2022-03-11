@@ -1,17 +1,18 @@
-extern crate bcrypt;
 use bcrypt::{hash, verify, DEFAULT_COST};
 use init_lib::ckeys::CKeys;
 use redis::{Commands, Connection as RedisConnection};
-use rsa::{PaddingScheme, PublicKey};
+use rsa::PaddingScheme;
+// use rsa::{PaddingScheme, PublicKey};
+// extern crate bcrypt;
 
-pub fn encrypt_data(crypt_info: &mut CKeys, data: &[u8]) -> Vec<u8> {
-    let padding = PaddingScheme::new_pkcs1v15_encrypt();
-    let enc_data = crypt_info
-        .public_key
-        .encrypt(&mut crypt_info.osrng, padding, &data[..])
-        .expect("Failed to encrypt data!");
-    return enc_data;
-}
+// pub fn encrypt_data(crypt_info: &mut CKeys, data: &[u8]) -> Vec<u8> {
+//     let padding = PaddingScheme::new_pkcs1v15_encrypt();
+//     let enc_data = crypt_info
+//         .public_key
+//         .encrypt(&mut crypt_info.osrng, padding, &data[..])
+//         .expect("Failed to encrypt data!");
+//     return enc_data;
+// }
 
 pub fn decrypt_and_compare_data_auth(
     crypt_info: &mut CKeys,

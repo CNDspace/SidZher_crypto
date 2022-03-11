@@ -1,10 +1,10 @@
 use crate::ckeys::CKeys;
-use diesel::prelude::*;
-use dotenv::dotenv;
+// use diesel::prelude::*;
+// use dotenv::dotenv;
 use rand::rngs::OsRng;
 use redis::{Connection as RedisConnection, RedisResult};
 use rsa::{RSAPrivateKey, RSAPublicKey};
-use std::env;
+// use std::env;
 
 pub mod ckeys {
     use crate::crypto_module_gen;
@@ -32,13 +32,13 @@ pub mod ckeys {
     }
 }
 
-pub fn init_db_connection() -> SqliteConnection {
-    dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    SqliteConnection::establish(&database_url)
-        .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
-}
+// pub fn init_db_connection() -> SqliteConnection {
+//     dotenv().ok();
+//
+//     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+//     SqliteConnection::establish(&database_url)
+//         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
+// }
 
 pub fn init_redis_db_connection() -> RedisResult<RedisConnection> {
     return redis::Client::open("redis://127.0.0.1:6379/")?.get_connection();

@@ -184,7 +184,10 @@ fn handle_connection(
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
                 continue;
             }
-            Err(e) => panic!("encountered IO error: {}", e),
+            Err(e) => {
+                println!("encountered IO error: {}", e);
+                continue;
+            }
         }
     }
 
