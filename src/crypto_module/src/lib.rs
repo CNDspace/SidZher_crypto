@@ -1,6 +1,7 @@
 use bcrypt::{hash, verify, DEFAULT_COST};
 use init_lib::ckeys::CKeys;
-use redis::{Commands, Connection as RedisConnection};
+use init_lib::init_redis_db_connection;
+use redis::{Commands, RedisResult};
 use rsa::PaddingScheme;
 // use rsa::{PaddingScheme, PublicKey};
 // extern crate bcrypt;
@@ -18,20 +19,26 @@ pub fn decrypt_and_compare_data_auth(
     crypt_info: &mut CKeys,
     enc_data: Vec<u8>,
     username: String,
-    db_connection: &mut RedisConnection,
 ) -> bool {
+    let mut db_connection = init_redis_db_connection().unwrap();
     let padding = PaddingScheme::new_pkcs1v15_encrypt();
     match crypt_info.private_key.decrypt(padding, &enc_data) {
         Ok(decrypted) => {
-            let db_value: Option<String> = db_connection.get(username.as_str()).unwrap();
-            if let Some(password) = db_value {
-                let decrypted_u8: &[u8] = &decrypted;
-                match verify(&decrypted_u8, password.as_str()) {
-                    Ok(condition) => return if condition { true } else { false },
-                    Err(_) => false,
-                };
-            };
-            return false;
+            let db_try_get_value: RedisResult<Option<String>> =
+                db_connection.get(username.as_str());
+            match db_try_get_value {
+                Ok(db_value) => {
+                    if let Some(password) = db_value {
+                        let decrypted_u8: &[u8] = &decrypted;
+                        match verify(&decrypted_u8, password.as_str()) {
+                            Ok(condition) => return if condition { true } else { false },
+                            Err(_) => false,
+                        };
+                    };
+                    return false;
+                }
+                Err(_) => false,
+            }
         }
         Err(_) => false,
     };

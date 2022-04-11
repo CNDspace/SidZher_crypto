@@ -1,5 +1,4 @@
 use init_lib::ckeys::CKeys;
-use redis::Connection as RedisConnection;
 use rsa::PublicKeyPemEncoding;
 use serde::{Deserialize, Serialize};
 use serde_json::Result;
@@ -7,7 +6,9 @@ use std::io::prelude::*;
 use std::io::{self, Read};
 use std::net::{TcpListener, TcpStream};
 use std::u8;
+use std::{thread, time};
 
+const SLEEP_FIVE_SECS: time::Duration = time::Duration::from_secs(5);
 // Константы для определения шага
 const FIRST_STEP: u8 = 1;
 const SECOND_STEP: u8 = 2;
@@ -62,11 +63,7 @@ fn _check_username(username_struct: &Option<String>, user_json: &String) -> bool
     false
 }
 
-fn parse_data(
-    req_data: &str,
-    db_connection: &mut RedisConnection,
-    user_struct: &mut User,
-) -> Result<String> {
+fn parse_data(req_data: &str, user_struct: &mut User) -> Result<String> {
     // Проверяем, что мы можем десериализовать полученный json файл
     return match serde_json::from_str(req_data) {
         Ok(parsed) => {
@@ -118,7 +115,6 @@ fn parse_data(
                                 crypt_info,
                                 base64::decode(json_data).unwrap(),
                                 username,
-                                db_connection,
                             ) {
                                 request_json.data = "OK".to_string()
                             } else {
@@ -164,11 +160,7 @@ fn send_data(mut stream: &TcpStream, request_message: String) {
     stream.write(response.as_bytes()).unwrap();
 }
 
-fn handle_connection(
-    mut stream: TcpStream,
-    db_connection: &mut RedisConnection,
-    user_struct: &mut User,
-) {
+fn handle_connection(mut stream: TcpStream, user_struct: &mut User) {
     // инициализируем переменную buffer для хранения и получения данных с сокета
     let mut buffer = [0 as u8; 2048];
 
@@ -200,7 +192,7 @@ fn handle_connection(
     println!("Received from front:\n{}", string_buffer);
 
     // Вызываем функцию, в которой парсим полученный json файл
-    let serialized_data = parse_data(string_buffer.as_str(), db_connection, user_struct);
+    let serialized_data = parse_data(string_buffer.as_str(), user_struct);
 
     // Отправляем данные
     match serialized_data {
@@ -211,10 +203,13 @@ fn handle_connection(
 }
 
 fn main() {
+    thread::sleep(SLEEP_FIVE_SECS);
+    println!("Sidzher_crypto module started");
     // Проверяется коннект к базе данных
     match init_lib::init_redis_db_connection() {
         // Если подключение успешно, то продолжается работа
-        Ok(mut connect) => {
+        Ok(_) => {
+            println!("Connected to database!");
             // в переменной listener задаём адрес и порт для обмена данными
             let listener = TcpListener::bind("127.0.0.1:5141");
             // Если подключение успешно, то продолжаем работу
@@ -225,7 +220,7 @@ fn main() {
                 for stream in listener_ok.incoming() {
                     // инициализируем переменную stream для работы с сетевым потоком
                     let stream = stream.unwrap();
-                    handle_connection(stream, &mut connect, &mut init_user);
+                    handle_connection(stream, &mut init_user);
                 }
                 // Если возникла ошибка, то выдаётся ошибка о том, что данный порт занят
             } else {
@@ -233,6 +228,12 @@ fn main() {
             }
         }
         // Если не удалось подключиться к базе данных, то выдаётся ошибка
-        Err(error) => println!("Failed connect to database!\n{}", error),
+        Err(error) => {
+            println!(
+                "Failed connect to database!\n{}\nSidzher_crypto module stopped",
+                error
+            );
+            main() // Опасно, по возможности избавиться
+        }
     }
 }
