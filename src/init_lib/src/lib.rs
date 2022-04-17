@@ -1,3 +1,8 @@
+/*
+    Данная библиотека используется для инициализации данных 
+    (подключение к базе данных и создание пары ключей)
+*/
+
 use crate::ckeys::CKeys;
 // use diesel::prelude::*;
 // use dotenv::dotenv;
@@ -6,15 +11,20 @@ use redis::{Connection as RedisConnection, RedisResult};
 use rsa::{RSAPrivateKey, RSAPublicKey};
 // use std::env;
 
+// внутренний модуль, который используется для хранения данных о ключах во время работы программы
 pub mod ckeys {
+    // подключаем функцию для генерации пары ключей
     use crate::crypto_module_gen;
 
+    // объявляем структуру для хранения ключей
     pub struct CKeys {
         pub osrng: rand::rngs::OsRng,
         pub private_key: rsa::RSAPrivateKey,
         pub public_key: rsa::RSAPublicKey,
     }
+    // имплементация для работы с структурой
     impl CKeys {
+        // функция new заносит в структуру сгенерированную криптоинформацию
         pub fn new(
             osrng_data: rand::rngs::OsRng,
             private_key_data: rsa::RSAPrivateKey,
@@ -26,6 +36,7 @@ pub mod ckeys {
                 public_key: public_key_data,
             }
         }
+        // функция flush генерирует новуюу пару ключей
         pub fn flush() -> CKeys {
             crypto_module_gen()
         }
@@ -40,11 +51,14 @@ pub mod ckeys {
 //         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 // }
 
+// функция инициирует подключение к базе данных
 pub fn init_redis_db_connection() -> RedisResult<RedisConnection> {
     return redis::Client::open("redis://127.0.0.1:6379/")?.get_connection();
 }
 
 //TODO: add args for generate new or update
+
+// функция для генерации приватного и публичного ключа
 pub fn crypto_module_gen() -> CKeys {
     let mut rng = OsRng;
     let bits = 2048;
