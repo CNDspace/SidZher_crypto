@@ -18,7 +18,7 @@ Author: Alexander Zherdev
 cargo run
 ```
 Or use compile build in `<project_path>/target/debug/sidzher_crypto_bin`
-### Debub build
+### Debug build
 ```shell
 cargo build
 ```
